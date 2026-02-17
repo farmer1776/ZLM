@@ -53,8 +53,9 @@ cp conf/app.conf.example conf/app.conf
 # Edit conf/app.conf — set zimbra admin_url, admin_user, etc.
 # Passwords can be left blank; they will be read from secrets.
 
-# Create data directories
+# Create data directories and set ownership to the container's zlm user (uid 999)
 mkdir -p data/{uploads,exports,logs}
+chown -R 999:999 data/
 ```
 
 ## 3. Build the Container Image

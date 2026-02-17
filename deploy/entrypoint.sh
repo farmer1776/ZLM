@@ -6,6 +6,9 @@ DB_PORT="${ZLM_DB_PORT:-3306}"
 MAX_RETRIES=30
 RETRY_INTERVAL=2
 
+# Ensure data directories are writable (mounted host volumes may be root-owned)
+mkdir -p /app/data/logs /app/data/uploads /app/data/exports
+
 echo "Waiting for database at ${DB_HOST}:${DB_PORT}..."
 for i in $(seq 1 $MAX_RETRIES); do
     if python -c "

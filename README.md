@@ -112,6 +112,7 @@ cp conf/app.conf.example conf/app.conf
 
 ```bash
 mkdir -p data/{uploads,exports,logs}
+chown -R 999:999 data/
 ```
 
 ### 6. Build the container image
