@@ -1,0 +1,65 @@
+version: "3"
+
+services:
+  db:
+    image: docker.io/library/mariadb:10.11
+    container_name: zlm-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: zimbra_lifecycle
+      MYSQL_USER: zlm
+      MYSQL_PASSWORD_FILE: /run/secrets/zlm_db_password
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/zlm_db_password
+    secrets:
+      - zlm_db_password
+    volumes:
+      - zlm-dbdata:/var/lib/mysql:Z
+      - ./deploy/mariadb-init.sql:/docker-entrypoint-initdb.d/init.sql:ro,Z
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  app:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: zlm-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      ZLM_DB_HOST: db
+      ZLM_DB_PORT: "3306"
+      ZLM_DB_NAME: zimbra_lifecycle
+      ZLM_DB_USER: zlm
+      ZLM_DEBUG: "false"
+      ZLM_ALLOWED_HOSTS: "*"
+    secrets:
+      - zlm_db_password
+      - zlm_secret_key
+      - zlm_encryption_key
+      - zlm_zimbra_password
+    volumes:
+      - ./conf:/app/conf:ro,Z
+      - ./data:/app/data:Z
+    ports:
+      - "8000:8000"
+
+volumes:
+  zlm-dbdata:
+
+secrets:
+  zlm_db_password:
+    external: true
+  zlm_secret_key:
+    external: true
+  zlm_encryption_key:
+    external: true
+  zlm_zimbra_password:
+    external: true

@@ -18,7 +18,13 @@ def generate_key():
 
 
 def load_key():
-    """Load the Fernet key from disk."""
+    """Load the Fernet key from podman secret, disk, or raise."""
+    # Check podman secret first
+    secret_path = '/run/secrets/zlm_encryption_key'
+    if os.path.exists(secret_path):
+        with open(secret_path, 'rb') as f:
+            return f.read().strip()
+
     if not os.path.exists(KEY_PATH):
         raise FileNotFoundError(
             f"Encryption key not found at {KEY_PATH}. "

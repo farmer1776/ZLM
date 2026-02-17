@@ -1,15 +1,18 @@
 import multiprocessing
+import os
 
-bind = 'unix:/run/zimbra-lifecycle/gunicorn.sock'
-workers = min(4, multiprocessing.cpu_count())
+# Bind
+bind = os.environ.get('GUNICORN_BIND', '0.0.0.0:8000')
+workers = int(os.environ.get('GUNICORN_WORKERS', min(4, multiprocessing.cpu_count())))
 worker_class = 'uvicorn.workers.UvicornWorker'
 timeout = 120
 keepalive = 5
+preload_app = True
 
-# Logging
-accesslog = '/root/zimbra-lifecycle-fastapi/data/logs/gunicorn_access.log'
-errorlog = '/root/zimbra-lifecycle-fastapi/data/logs/gunicorn_error.log'
-loglevel = 'info'
+# Logging — stdout/stderr for container log drivers
+accesslog = '-'
+errorlog = '-'
+loglevel = os.environ.get('GUNICORN_LOG_LEVEL', 'info')
 
 # Process naming
 proc_name = 'zimbra-lifecycle'

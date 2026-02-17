@@ -2,7 +2,7 @@ import logging
 import os
 
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader
 from starlette.middleware.sessions import SessionMiddleware
@@ -102,6 +102,20 @@ def _patched_template_response(name, context, **kwargs):
 
 
 templates.TemplateResponse = _patched_template_response
+
+
+# Health check
+@app.get('/healthz')
+async def healthz():
+    from sqlalchemy import text
+    from database import SessionLocal
+    try:
+        db = SessionLocal()
+        db.execute(text('SELECT 1'))
+        db.close()
+        return JSONResponse({'status': 'ok'}, status_code=200)
+    except Exception as e:
+        return JSONResponse({'status': 'error', 'detail': str(e)}, status_code=503)
 
 
 # Include routers

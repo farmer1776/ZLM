@@ -12,6 +12,7 @@ data/
 # Sensitive config files
 conf/app.conf
 conf/encryption.key
+.env
 
 # IDE
 .idea/

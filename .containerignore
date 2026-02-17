@@ -1,0 +1,11 @@
+venv/
+.git/
+data/
+conf/app.conf
+conf/encryption.key
+__pycache__/
+*.pyc
+*.pyo
+.env
+.gitignore
+.containerignore

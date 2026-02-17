@@ -8,8 +8,9 @@ admin_url = https://zimbra.example.com:7071/service/admin/soap
 admin_user = admin@example.com
 admin_password = CHANGE_ME
 
-[redis]
-url = redis://127.0.0.1:6379/0
-
 [database]
-path = /root/zimbra-lifecycle/data/db/lifecycle.db
+host = localhost
+port = 3306
+name = zimbra_lifecycle
+user = zlm
+password = CHANGE_ME
