@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # ---- Builder stage ----
 FROM python:3.9-slim AS builder
 

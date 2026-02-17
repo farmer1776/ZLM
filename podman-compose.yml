@@ -26,6 +26,7 @@ services:
     build:
       context: .
       dockerfile: Containerfile
+      format: docker
     container_name: zlm-app
     restart: unless-stopped
     depends_on:
