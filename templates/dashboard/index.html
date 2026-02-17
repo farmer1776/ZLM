@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Dashboard</h1>
+</div>
+
+<!-- Status Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-2">
+        <div class="card stat-card total">
+            <div class="stat-value">{{ stats.total_accounts|default("0") }}</div>
+            <div class="stat-label">Total Accounts</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card active">
+            <div class="stat-value">{{ stats.active_count|default("0") }}</div>
+            <div class="stat-label">Active</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card locked">
+            <div class="stat-value">{{ stats.locked_count|default("0") }}</div>
+            <div class="stat-label">Locked</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card closed">
+            <div class="stat-value">{{ stats.closed_count|default("0") }}</div>
+            <div class="stat-label">Closed</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card purged">
+            <div class="stat-value">{{ stats.pending_purge_count|default("0") }}</div>
+            <div class="stat-label">Pending Purge</div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stat-card purged">
+            <div class="stat-value">{{ stats.purged_count|default("0") }}</div>
+            <div class="stat-label">Purged</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- Purge Queue Summary -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Purge Queue</div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="color: var(--text-muted);">Eligible for Purge</span>
+                    <strong>{{ stats.pending_purge_queue|default("0") }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="color: var(--text-muted);">Total in Queue</span>
+                    <strong>{{ stats.upcoming_purge|default("0") }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span style="color: var(--text-muted);">Protected Accounts</span>
+                    <strong>{{ stats.protected_count|default("0") }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Last Sync -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Last Sync</div>
+            <div class="card-body">
+                {% if stats.last_sync %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="color: var(--text-muted);">Time</span>
+                    <span>{{ stats.last_sync.started_at|timesince }} ago</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="color: var(--text-muted);">Status</span>
+                    <span class="badge {% if stats.last_sync.status == 'completed' %}bg-success{% elif stats.last_sync.status == 'failed' %}bg-danger{% else %}bg-info{% endif %}">{{ stats.last_sync.status }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span style="color: var(--text-muted);">Accounts Synced</span>
+                    <strong>{{ stats.last_sync.total_accounts }}</strong>
+                </div>
+                {% else %}
+                <p style="color: var(--text-muted);">No sync has been run yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Domains -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Top Domains</div>
+            <div class="card-body">
+                {% for item in stats.domain_counts %}
+                <div class="d-flex justify-content-between mb-1">
+                    <a href="/accounts/?domain={{ item.domain }}" class="table-link">{{ item.domain }}</a>
+                    <span>{{ item.count }}</span>
+                </div>
+                {% else %}
+                <p style="color: var(--text-muted);">No accounts yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        Recent Activity
+        <a href="/audit/" class="btn btn-sm btn-outline-secondary">View All</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in stats.recent_logs %}
+                <tr>
+                    <td>{{ log.created_at|timesince }} ago</td>
+                    <td>{{ log.user.username if log.user else "system" }}</td>
+                    <td>{{ log.action_display }}</td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">
+                        {% if log.details.email %}{{ log.details.email }}{% endif %}
+                        {% if log.details.old_status %} {{ log.details.old_status }} &rarr; {{ log.details.new_status }}{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="color: var(--text-muted); text-align: center;">No activity yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

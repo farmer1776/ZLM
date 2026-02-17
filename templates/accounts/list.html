@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts - {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Accounts <span style="color: var(--text-muted); font-size: 1rem;">({{ total_count }})</span></h1>
+    <button id="export-btn" class="btn btn-outline-secondary btn-sm">Export CSV</button>
+</div>
+
+<!-- Filters -->
+<form method="get" class="filter-bar">
+    <div class="filter-group" style="flex: 2;">
+        <label>Search</label>
+        <input type="text" name="q" value="{{ q }}" class="form-control bg-dark text-light border-secondary" placeholder="Search email or name...">
+    </div>
+    <div class="filter-group">
+        <label>Status</label>
+        <select name="status" class="form-select bg-dark text-light border-secondary">
+            <option value="">All Statuses</option>
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Domain</label>
+        <select name="domain" class="form-select bg-dark text-light border-secondary">
+            <option value="">All Domains</option>
+            {% for d in domains %}
+            <option value="{{ d }}" {% if current_domain == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="/accounts/" class="btn btn-outline-secondary ms-1">Clear</a>
+    </div>
+</form>
+
+<!-- Accounts Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Display Name</th>
+                    <th>Domain</th>
+                    <th>Status</th>
+                    <th>Forwarding</th>
+                    <th>Last Login</th>
+                    <th>Mailbox Size</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in accounts %}
+                <tr>
+                    <td>
+                        <a href="/accounts/{{ account.id }}/" class="table-link">{{ account.email }}</a>
+                    </td>
+                    <td>{{ account.display_name }}</td>
+                    <td>{{ account.domain }}</td>
+                    <td>{{ account.status|status_badge }}</td>
+                    <td style="font-size: 0.85rem;">
+                        {% if account.forwarding_address %}
+                        <span class="protected-badge">{{ account.forwarding_address }}</span>
+                        {% else %}-{% endif %}
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">
+                        {% if account.last_login_at %}{{ account.last_login_at|dateformat }}{% else %}-{% endif %}
+                    </td>
+                    <td>{{ account.mailbox_size_display }}</td>
+                    <td>
+                        <a href="/accounts/{{ account.id }}/" class="btn btn-sm btn-outline-secondary">View</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">No accounts found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% include "partials/_pagination.html" %}
+{% endblock %}

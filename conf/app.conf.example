@@ -1,0 +1,15 @@
+[django]
+secret_key = CHANGE_ME_TO_RANDOM_STRING
+debug = false
+allowed_hosts = localhost,127.0.0.1
+
+[zimbra]
+admin_url = https://zimbra.example.com:7071/service/admin/soap
+admin_user = admin@example.com
+admin_password = CHANGE_ME
+
+[redis]
+url = redis://127.0.0.1:6379/0
+
+[database]
+path = /root/zimbra-lifecycle/data/db/lifecycle.db

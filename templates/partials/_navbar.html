@@ -1,0 +1,12 @@
+<div class="top-navbar">
+    <div>
+        <strong>{% block page_title %}{% endblock %}</strong>
+    </div>
+    <div class="user-info">
+        {% if user is not none %}
+        <span style="color: var(--text-muted); font-size: 0.85rem;">{{ user.username }}</span>
+        <a href="/auth/password-change/">Change Password</a>
+        <a href="/auth/logout/">Logout</a>
+        {% endif %}
+    </div>
+</div>

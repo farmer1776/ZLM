@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Log - {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>Audit Log</h1>
+    <a href="/audit/export/?{{ query_string }}" class="btn btn-outline-secondary btn-sm">Export CSV</a>
+</div>
+
+<!-- Filters -->
+<form method="get" class="filter-bar">
+    <div class="filter-group">
+        <label>Action</label>
+        <select name="action" class="form-select bg-dark text-light border-secondary">
+            <option value="">All Actions</option>
+            {% for value, label in action_choices %}
+            <option value="{{ value }}" {% if current_action == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>From Date</label>
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-control bg-dark text-light border-secondary">
+    </div>
+    <div class="filter-group">
+        <label>To Date</label>
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-control bg-dark text-light border-secondary">
+    </div>
+    <div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="/audit/" class="btn btn-outline-secondary ms-1">Clear</a>
+    </div>
+</form>
+
+<!-- Log Table -->
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Target</th>
+                    <th>IP Address</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="font-size: 0.85rem; white-space: nowrap;">{{ log.created_at|dateformat("%Y-%m-%d %H:%M:%S") }}</td>
+                    <td>{{ log.user.username if log.user else "system" }}</td>
+                    <td>
+                        <span class="badge bg-secondary">{{ log.action_display }}</span>
+                    </td>
+                    <td style="font-size: 0.85rem;">
+                        {% if log.target_type %}{{ log.target_type }}{% endif %}
+                        {% if log.target_id %}#{{ log.target_id }}{% endif %}
+                    </td>
+                    <td style="font-size: 0.85rem; color: var(--text-muted);">{{ log.ip_address or "-" }}</td>
+                    <td style="font-size: 0.8rem; color: var(--text-muted); max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+                        {% if log.details.email %}{{ log.details.email }}{% endif %}
+                        {% if log.details.old_status %} {{ log.details.old_status }}&rarr;{{ log.details.new_status }}{% endif %}
+                        {% if log.details.total %} total:{{ log.details.total }}{% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="color: var(--text-muted); text-align: center;">No logs found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include "partials/_pagination.html" %}
+{% endblock %}

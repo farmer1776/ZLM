@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Operation Results - {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="breadcrumb" style="color: var(--text-muted);">
+        <a href="/bulk/" class="table-link">Bulk Operations</a> / Results
+    </div>
+    <h1>Operation Results - {{ bulk_op.operation_type_display }}</h1>
+</div>
+
+<!-- Summary -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value" style="color: var(--accent);">{{ bulk_op.total_count }}</div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value" style="color: #198754;">{{ bulk_op.success_count }}</div>
+            <div class="stat-label">Successful</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value" style="color: #dc3545;">{{ bulk_op.error_count }}</div>
+            <div class="stat-label">Errors</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">
+                <span class="badge {% if bulk_op.status == 'completed' %}bg-success{% elif bulk_op.status == 'failed' %}bg-danger{% elif bulk_op.status == 'processing' %}bg-info{% else %}bg-secondary{% endif %}" style="font-size: 1rem;">
+                    {{ bulk_op.status_display }}
+                </span>
+            </div>
+            <div class="stat-label">Status</div>
+        </div>
+    </div>
+</div>
+
+<!-- Details -->
+<div class="card">
+    <div class="card-header">Details</div>
+    <div class="card-body p-0">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Result</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in bulk_op.results %}
+                <tr>
+                    <td>{{ result.email }}</td>
+                    <td>
+                        {% if result.status == 'success' %}
+                        <span class="badge bg-success">Success</span>
+                        {% elif result.status == 'error' %}
+                        <span class="badge bg-danger">Error</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ result.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">{{ result.message|default("-") }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="/bulk/" class="btn btn-outline-secondary">Back to Bulk Operations</a>
+</div>
+{% endblock %}

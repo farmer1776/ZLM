@@ -1,0 +1,20 @@
+# Virtual environment
+venv/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Runtime data
+data/
+
+# Sensitive config files
+conf/app.conf
+conf/encryption.key
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
