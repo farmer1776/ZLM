@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - {{ APP_NAME }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ request.url_for('static', path='css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ request.url_for('static', path='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
     <div class="login-container">
         <div class="login-card">
-            <h1>{{ APP_NAME }}</h1>
+            <div class="login-logo">
+                <img src="{{ request.url_for('static', path='img/zimbra-logo-color.png') }}" alt="Zimbra">
+                <p class="login-subtitle">Lifecycle Manager</p>
+            </div>
 
             {% if error %}
             <div class="alert alert-danger">
