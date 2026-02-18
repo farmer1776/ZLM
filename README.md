@@ -278,3 +278,5 @@ podman-compose logs -f        # both
 ## Further Reading
 
 See [DEPLOY.md](DEPLOY.md) for backup/restore procedures, troubleshooting, and reverse proxy configuration.
+
+For bare-metal or Incus system container installs (no Podman), see [DEPLOY-BAREMETAL.md](DEPLOY-BAREMETAL.md).
