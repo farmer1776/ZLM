@@ -184,7 +184,45 @@ bash deploy/create_user.sh admin 'YourSecurePassword1'
 >
 > **Tip:** Always use single quotes around the password argument to prevent the shell from interpreting special characters.
 
-### 11. (Optional) Set up cron jobs
+### 11. Enable autostart on reboot
+
+Linger keeps containers alive through logouts, but a systemd user service is needed to restart them after a reboot.
+
+First, ensure the `ip_tables` kernel module loads at boot (required by Podman networking on Proxmox/Incus VMs):
+
+```bash
+echo "ip_tables" | sudo tee /etc/modules-load.d/ip_tables.conf
+```
+
+Then create and enable the service:
+
+```bash
+mkdir -p ~/.config/systemd/user
+
+cat > ~/.config/systemd/user/zlm.service << 'EOF'
+[Unit]
+Description=Zimbra Lifecycle Manager (podman-compose)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/ZLM
+ExecStartPre=/usr/bin/podman rm -af
+ExecStart=/usr/bin/podman-compose up -d
+ExecStop=/usr/bin/podman-compose down
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable zlm.service
+```
+
+### 12. (Optional) Set up cron jobs
 
 ```bash
 crontab -e
