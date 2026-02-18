@@ -61,15 +61,24 @@ sudo loginctl enable-linger $USER
 dnf install -y podman-compose runc git
 ```
 
-### 2. Proxmox / Incus VMs — cgroup workaround
+### 2. Proxmox / Incus VMs — cgroup and networking workaround
 
 > **Skip this step on bare-metal hosts.** Proxmox VMs (and Incus containers) restrict
-> cgroup controller delegation, which prevents the default `crun` runtime from starting
-> containers. Apply this config to use `runc` with the cgroupfs manager instead:
+> cgroup controller delegation and don't auto-load the `ip_tables` kernel module, both
+> of which prevent containers from starting.
+
+Load `ip_tables` now and persist it across reboots:
 
 ```bash
-mkdir -p /etc/containers
-cat > /etc/containers/containers.conf << 'EOF'
+sudo modprobe ip_tables
+echo "ip_tables" | sudo tee /etc/modules-load.d/ip_tables.conf
+```
+
+Apply the cgroup config to use `runc` with the cgroupfs manager:
+
+```bash
+sudo mkdir -p /etc/containers
+sudo tee /etc/containers/containers.conf << 'EOF'
 [containers]
 default_sysctls = []
 
@@ -188,13 +197,7 @@ bash deploy/create_user.sh admin 'YourSecurePassword1'
 
 Linger keeps containers alive through logouts, but a systemd user service is needed to restart them after a reboot.
 
-First, ensure the `ip_tables` kernel module loads at boot (required by Podman networking on Proxmox/Incus VMs):
-
-```bash
-echo "ip_tables" | sudo tee /etc/modules-load.d/ip_tables.conf
-```
-
-Then create and enable the service:
+Create and enable the service:
 
 ```bash
 mkdir -p ~/.config/systemd/user
