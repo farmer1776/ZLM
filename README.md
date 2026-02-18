@@ -49,7 +49,11 @@ A web-based management tool for Zimbra mailbox lifecycle operations — account 
 
 ## Provisioning on Rocky Linux 9.7
 
-These steps assume a fresh Rocky Linux 9.7 server with Podman 6.5 already installed.
+These steps assume a fresh Rocky Linux 9.7 server with Podman 6.5 already installed. All commands run as a **non-root user** (rootless Podman). Enable systemd lingering so containers survive logout:
+
+```bash
+sudo loginctl enable-linger $USER
+```
 
 ### 1. Install podman-compose and runc
 
@@ -128,10 +132,14 @@ cp conf/app.conf.example conf/app.conf
 
 ### 6. Create data directories
 
+The container runs as the non-root `zlm` user (uid 999). Use `podman unshare` to set ownership correctly inside the user namespace:
+
 ```bash
 mkdir -p data/{uploads,exports,logs}
-chown -R 999:999 data/
+podman unshare chown -R 999:999 data/
 ```
+
+> **Running as root?** Use `chown -R 999:999 data/` instead.
 
 ### 7. Build the container image
 

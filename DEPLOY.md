@@ -55,7 +55,10 @@ cp conf/app.conf.example conf/app.conf
 
 # Create data directories and set ownership to the container's zlm user (uid 999)
 mkdir -p data/{uploads,exports,logs}
-chown -R 999:999 data/
+# Rootless Podman (recommended):
+podman unshare chown -R 999:999 data/
+# Root Podman:
+# chown -R 999:999 data/
 ```
 
 ## 3. Build the Container Image
