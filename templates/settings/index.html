@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Settings</h1>
+</div>
+
+<div class="row g-3">
+    <!-- Left column -->
+    <div class="col-md-5">
+
+        <!-- Last Sync -->
+        <div class="card mb-3">
+            <div class="card-header">Last Sync</div>
+            <div class="card-body">
+                {% if last_sync %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="color: var(--text-muted);">Started</span>
+                    <span>{{ last_sync.started_at|timesince }} ago</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="color: var(--text-muted);">Status</span>
+                    <span class="badge {% if last_sync.status == 'completed' %}bg-success{% elif last_sync.status == 'failed' %}bg-danger{% else %}bg-info{% endif %}">
+                        {{ last_sync.status }}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="color: var(--text-muted);">Total</span>
+                    <strong>{{ last_sync.total_accounts }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="color: var(--text-muted);">Created / Updated / Unchanged</span>
+                    <span>{{ last_sync.created_count }} / {{ last_sync.updated_count }} / {{ last_sync.unchanged_count }}</span>
+                </div>
+                {% if last_sync.error_count %}
+                <div class="d-flex justify-content-between mb-2">
+                    <span style="color: var(--text-muted);">Errors</span>
+                    <span class="badge bg-danger">{{ last_sync.error_count }}</span>
+                </div>
+                {% endif %}
+                {% if last_sync.duration %}
+                <div class="d-flex justify-content-between">
+                    <span style="color: var(--text-muted);">Duration</span>
+                    <span>{{ last_sync.duration.seconds }}s</span>
+                </div>
+                {% endif %}
+                {% else %}
+                <p style="color: var(--text-muted);">No sync has been run yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Manual Sync -->
+        <div class="card mb-3">
+            <div class="card-header">Manual Sync</div>
+            <div class="card-body">
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+                    Trigger an immediate sync from Zimbra. The sync runs in the background
+                    — refresh the page after a few moments to see results.
+                </p>
+                <form method="post" action="/settings/sync-now/">
+                    <button type="submit" class="btn btn-primary">
+                        &#8635; Sync Now
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Auto-Sync Schedule -->
+        <div class="card">
+            <div class="card-header">Auto-Sync Schedule</div>
+            <div class="card-body">
+                {% if next_run %}
+                <div class="d-flex justify-content-between mb-3">
+                    <span style="color: var(--text-muted);">Next run</span>
+                    <span>in {{ next_run|timeuntil }}</span>
+                </div>
+                {% endif %}
+                <form method="post" action="/settings/schedule/">
+                    <div class="mb-3">
+                        <label for="interval" class="form-label" style="color: var(--text-muted); font-size: 0.85rem;">
+                            Sync Interval
+                        </label>
+                        <select name="interval" id="interval" class="form-select">
+                            {% for value, label in sync_interval_choices %}
+                            <option value="{{ value }}" {% if value == current_interval %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Schedule</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right column -->
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header">Recent Sync History</div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Started</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Errors</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sync in recent_syncs %}
+                        <tr>
+                            <td>{{ sync.started_at|timesince }} ago</td>
+                            <td>
+                                <span class="badge {% if sync.status == 'completed' %}bg-success{% elif sync.status == 'failed' %}bg-danger{% else %}bg-info{% endif %}">
+                                    {{ sync.status }}
+                                </span>
+                            </td>
+                            <td>{{ sync.total_accounts }}</td>
+                            <td>
+                                {% if sync.error_count %}
+                                <span class="badge bg-danger">{{ sync.error_count }}</span>
+                                {% else %}
+                                <span style="color: var(--text-muted);">0</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if sync.duration %}
+                                {{ sync.duration.seconds }}s
+                                {% else %}
+                                <span style="color: var(--text-muted);">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" style="color: var(--text-muted); text-align: center;">No syncs have been run yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

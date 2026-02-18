@@ -241,14 +241,17 @@ Or if placing behind nginx for TLS, open 443 instead and see the reverse proxy s
 
 ### 14. (Optional) Set up cron jobs
 
+Sync scheduling is now managed in-app via the **Settings** page (`/settings/`).
+You can choose Off / 1h / 2h / 4h / 8h / 12h / 24h; the schedule persists in the
+database and is restored automatically on container restart.
+
+Only the purge queue still requires a cron job if you want it automated:
+
 ```bash
 crontab -e
 ```
 
 ```cron
-# Sync accounts every 4 hours
-0 */4 * * * podman-compose -f /opt/ZLM/podman-compose.yml exec -T app python -m cli.main sync >> /var/log/zlm-sync.log 2>&1
-
 # Process purge queue daily at 2am
 0 2 * * * podman-compose -f /opt/ZLM/podman-compose.yml exec -T app python -m cli.main purge >> /var/log/zlm-purge.log 2>&1
 ```

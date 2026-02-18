@@ -66,6 +66,33 @@ def timesince(value):
     return f"{years} year{'s' if years != 1 else ''}"
 
 
+def timeuntil(value):
+    """Return a human-readable time until a future datetime (e.g., 'in 3 hours')."""
+    if value is None:
+        return ''
+    now = datetime.utcnow()
+    if hasattr(value, 'replace'):
+        try:
+            value = value.replace(tzinfo=None)
+        except (TypeError, AttributeError):
+            pass
+    diff = value - now
+    seconds = int(diff.total_seconds())
+
+    if seconds <= 0:
+        return 'now'
+    if seconds < 60:
+        return f"{seconds} second{'s' if seconds != 1 else ''}"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"{minutes} minute{'s' if minutes != 1 else ''}"
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours} hour{'s' if hours != 1 else ''}"
+    days = hours // 24
+    return f"{days} day{'s' if days != 1 else ''}"
+
+
 def dateformat(value, fmt='%m-%d-%Y'):
     """Format a datetime using strftime."""
     if value is None:

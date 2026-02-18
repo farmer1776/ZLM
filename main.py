@@ -1,10 +1,10 @@
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from jinja2 import Environment, FileSystemLoader
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.templating import Jinja2Templates
 
@@ -12,7 +12,43 @@ from config import settings
 from dependencies import _LoginRequired, get_flashed_messages
 from middleware.audit_context import RequestContextMiddleware
 from middleware.security import RateLimitMiddleware, SecurityHeadersMiddleware
-from template_filters import dateformat, filesizeformat_binary, status_badge, timesince
+from template_filters import dateformat, filesizeformat_binary, status_badge, timesince, timeuntil
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Determine whether to enable the scheduler.
+    # Under Gunicorn the post_fork hook sets ZLM_SCHEDULER_ENABLED=1 only for
+    # worker #1.  In dev (plain uvicorn) there is no hook, so we enable it
+    # unconditionally unless the env var is explicitly set to something else.
+    running_under_gunicorn = 'gunicorn' in os.environ.get('SERVER_SOFTWARE', '').lower()
+    scheduler_enabled = (
+        os.environ.get('ZLM_SCHEDULER_ENABLED') == '1'
+        if running_under_gunicorn
+        else True
+    )
+
+    if scheduler_enabled:
+        from database import SessionLocal
+        from services import scheduler as sched_service
+
+        sched_service.scheduler.start()
+        _logger = logging.getLogger(__name__)
+        _logger.info('Scheduler: started')
+
+        db = SessionLocal()
+        try:
+            interval = sched_service.get_sync_interval_hours(db)
+        finally:
+            db.close()
+
+        sched_service.apply_schedule(interval)
+
+    yield
+
+    if scheduler_enabled:
+        from services import scheduler as sched_service
+        sched_service.scheduler.shutdown(wait=False)
+
 
 # Configure logging
 os.makedirs(settings.LOG_DIR, exist_ok=True)
@@ -30,6 +66,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     docs_url='/docs' if settings.DEBUG else None,
     redoc_url=None,
+    lifespan=lifespan,
 )
 
 # Middleware (order matters - outermost first)
@@ -54,6 +91,7 @@ templates = Jinja2Templates(directory=_template_dir)
 templates.env.filters['status_badge'] = status_badge
 templates.env.filters['filesizeformat_binary'] = filesizeformat_binary
 templates.env.filters['timesince'] = timesince
+templates.env.filters['timeuntil'] = timeuntil
 templates.env.filters['dateformat'] = dateformat
 
 # Add global template context
@@ -125,6 +163,7 @@ from routers.accounts import router as accounts_router, _account_status_change_h
 from routers.audit import router as audit_router
 from routers.bulk_ops import router as bulk_ops_router, _bulk_upload_post_handler
 from routers.exports import router as exports_router
+from routers.settings import router as settings_router, _sync_now_post_handler, _schedule_change_post_handler
 
 app.include_router(auth_router)
 app.include_router(dashboard_router)
@@ -132,6 +171,7 @@ app.include_router(accounts_router)
 app.include_router(audit_router)
 app.include_router(bulk_ops_router)
 app.include_router(exports_router)
+app.include_router(settings_router)
 
 # Add async form handlers as raw routes (POST handlers that need form data)
 from starlette.routing import Route
@@ -140,6 +180,8 @@ app.routes.insert(0, Route('/auth/login/', _login_post_handler, methods=['POST']
 app.routes.insert(0, Route('/auth/password-change/', _password_change_post_handler, methods=['POST']))
 app.routes.insert(0, Route('/accounts/{pk:int}/', _account_status_change_handler, methods=['POST']))
 app.routes.insert(0, Route('/bulk/', _bulk_upload_post_handler, methods=['POST']))
+app.routes.insert(0, Route('/settings/sync-now/', _sync_now_post_handler, methods=['POST']))
+app.routes.insert(0, Route('/settings/schedule/', _schedule_change_post_handler, methods=['POST']))
 
 
 # Ensure data directories exist

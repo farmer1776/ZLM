@@ -88,6 +88,8 @@ curl http://localhost:8000/healthz
 
 ## 5. Initial Sync (Populate Accounts from Zimbra)
 
+Use the **Settings** page (`/settings/`) → **Sync Now** button, or run via CLI:
+
 ```bash
 podman-compose exec app python -m cli.main sync
 ```
@@ -149,13 +151,21 @@ To also remove the database volume (destroys data):
 podman-compose down -v
 ```
 
-### Run Scheduled Sync via Cron
+### Sync Scheduling
 
-Add to root's crontab:
+Sync scheduling is managed in-app via **Settings → Auto-Sync Schedule** (`/settings/`).
+Choose Off / 1 h / 2 h / 4 h / 8 h / 12 h / 24 h — the schedule persists in the
+database and is restored automatically when the container restarts. No cron job needed.
+
+To confirm the scheduler started after deployment:
 ```bash
-# Sync accounts every 4 hours
-0 */4 * * * podman-compose -f /path/to/zimbra-lifecycle-fastapi/podman-compose.yml exec -T app python -m cli.main sync >> /var/log/zlm-sync.log 2>&1
+podman-compose logs app | grep -i scheduler
+```
 
+### Purge Queue Cron (optional)
+
+The purge queue is not yet triggered automatically. Add to root's crontab if desired:
+```bash
 # Process purge queue daily at 2am
 0 2 * * * podman-compose -f /path/to/zimbra-lifecycle-fastapi/podman-compose.yml exec -T app python -m cli.main purge >> /var/log/zlm-purge.log 2>&1
 ```

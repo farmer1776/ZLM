@@ -27,6 +27,11 @@ def dashboard(request: Request, user: User = Depends(require_login), db: Session
         _stats_cache['data'] = stats
         _stats_cache['expires'] = now + 300  # 5 minute TTL
 
+    # Always fetch the last sync fresh — bypasses the 5-min cache so the
+    # dashboard reflects a just-completed background sync immediately.
+    last_sync = db.query(SyncHistory).order_by(SyncHistory.started_at.desc()).first()
+    stats['last_sync'] = last_sync
+
     return request.state.templates.TemplateResponse('dashboard/index.html', {
         'request': request,
         'user': user,

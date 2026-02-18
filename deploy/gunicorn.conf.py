@@ -1,6 +1,14 @@
 import multiprocessing
 import os
 
+
+def post_fork(server, worker):
+    """Only let worker #1 run the scheduler; all others clear the flag."""
+    if worker.age == 1:
+        os.environ['ZLM_SCHEDULER_ENABLED'] = '1'
+    else:
+        os.environ.pop('ZLM_SCHEDULER_ENABLED', None)
+
 # Bind
 bind = os.environ.get('GUNICORN_BIND', '0.0.0.0:8000')
 workers = int(os.environ.get('GUNICORN_WORKERS', min(4, multiprocessing.cpu_count())))
