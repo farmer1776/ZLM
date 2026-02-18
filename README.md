@@ -151,7 +151,7 @@ podman-compose exec app python -m cli.main sync
 ### 9. Create an admin user
 
 ```bash
-podman-compose exec -it app python -m cli.main user create
+sudo bash deploy/create_user.sh admin 'YourPassword123!'
 ```
 
 ### 10. (Optional) Set up cron jobs
