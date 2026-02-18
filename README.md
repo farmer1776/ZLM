@@ -49,19 +49,23 @@ A web-based management tool for Zimbra mailbox lifecycle operations — account 
 
 ## Provisioning on Rocky Linux 9.7
 
-These steps assume a fresh Rocky Linux 9.7 server with Podman 6.5 already installed. All commands run as a **non-root user** (rootless Podman). Enable systemd lingering so containers survive logout:
+These steps assume a fresh Rocky Linux 9.7 server with Podman 6.5 already installed. All commands run as a **non-root user** (rootless Podman).
+
+### 1. Enable linger
+
+Allows your containers to keep running after you log out:
 
 ```bash
 sudo loginctl enable-linger $USER
 ```
 
-### 1. Install podman-compose and runc
+### 2. Install podman-compose and runc
 
 ```bash
-dnf install -y podman-compose runc git
+sudo dnf install -y podman-compose runc git
 ```
 
-### 2. Proxmox / Incus VMs — cgroup and networking workaround
+### 3. Proxmox / Incus VMs — cgroup and networking workaround
 
 > **Skip this step on bare-metal hosts.** Proxmox VMs (and Incus containers) restrict
 > cgroup controller delegation and don't auto-load the `ip_tables` kernel module, both
@@ -88,15 +92,15 @@ cgroup_manager = "cgroupfs"
 EOF
 ```
 
-### 3. Clone the repository
+### 4. Clone the repository
 
 ```bash
-cd /opt
-git clone https://github.com/farmer1776/ZLM.git
-cd ZLM
+sudo git clone https://github.com/farmer1776/ZLM.git /opt/ZLM
+sudo chown -R $USER:$USER /opt/ZLM
+cd /opt/ZLM
 ```
 
-### 4. Create podman secrets
+### 5. Create podman secrets
 
 All sensitive credentials are stored as podman secrets — never in files or environment variables.
 
@@ -111,7 +115,7 @@ python3 -c "import secrets; print(secrets.token_urlsafe(64))" | podman secret cr
 printf 'YOUR_ZIMBRA_ADMIN_PASSWORD' | podman secret create zlm_zimbra_password -
 
 # Fernet encryption key for config values
-python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())" | podman secret create zlm_encryption_key -
+python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())" | podman secret create zlm_encryption_key -
 ```
 
 > **Migrating from an existing install?** Use your existing encryption key instead:
@@ -124,22 +128,27 @@ Verify all four secrets exist:
 podman secret ls
 ```
 
-### 5. Configure the application
+### 6. Configure the application
 
 ```bash
-# Environment variables (non-secret settings)
 cp .env.example .env
-# Edit .env — adjust GUNICORN_WORKERS, log level, etc.
-
-# Application config (Zimbra connection details)
 cp conf/app.conf.example conf/app.conf
-# Edit conf/app.conf:
-#   - Set zimbra admin_url to your Zimbra server
-#   - Set zimbra admin_user
-#   - Leave passwords blank (read from secrets)
 ```
 
-### 6. Create data directories
+Edit `conf/app.conf` and set the following:
+
+```ini
+[zimbra]
+admin_url = https://your-zimbra-server:7071/service/admin/soap
+admin_user = admin@example.com
+# admin_password is read from the zlm_zimbra_password secret — leave blank
+
+[database]
+host = db        # must be "db" to reach the database container
+# password is read from the zlm_db_password secret — leave blank
+```
+
+### 7. Create data directories
 
 The container runs as the non-root `zlm` user (uid 999). Use `podman unshare` to set ownership correctly inside the user namespace:
 
@@ -150,13 +159,13 @@ podman unshare chown -R 999:999 data/
 
 > **Running as root?** Use `chown -R 999:999 data/` instead.
 
-### 7. Build the container image
+### 8. Build the container image
 
 ```bash
 podman-compose build
 ```
 
-### 8. Start services
+### 9. Start services
 
 ```bash
 podman-compose up -d
@@ -177,27 +186,23 @@ curl http://localhost:8000/healthz
 # {"status":"ok"}
 ```
 
-### 9. Sync accounts from Zimbra
+### 10. Sync accounts from Zimbra
 
 ```bash
 podman-compose exec app python -m cli.main sync
 ```
 
-### 10. Create an admin user
+### 11. Create an admin user
 
 ```bash
 bash deploy/create_user.sh admin 'YourSecurePassword1'
 ```
 
-> **Rootless Podman:** Do not use `sudo` — the containers run under your user, not root.
->
 > **Tip:** Always use single quotes around the password argument to prevent the shell from interpreting special characters.
 
-### 11. Enable autostart on reboot
+### 12. Enable autostart on reboot
 
 Linger keeps containers alive through logouts, but a systemd user service is needed to restart them after a reboot.
-
-Create and enable the service:
 
 ```bash
 mkdir -p ~/.config/systemd/user
@@ -225,7 +230,16 @@ systemctl --user daemon-reload
 systemctl --user enable zlm.service
 ```
 
-### 12. (Optional) Set up cron jobs
+### 13. (Optional) Firewall
+
+```bash
+sudo firewall-cmd --permanent --add-port=8000/tcp
+sudo firewall-cmd --reload
+```
+
+Or if placing behind nginx for TLS, open 443 instead and see the reverse proxy section in [DEPLOY.md](DEPLOY.md).
+
+### 14. (Optional) Set up cron jobs
 
 ```bash
 crontab -e
@@ -238,15 +252,6 @@ crontab -e
 # Process purge queue daily at 2am
 0 2 * * * podman-compose -f /opt/ZLM/podman-compose.yml exec -T app python -m cli.main purge >> /var/log/zlm-purge.log 2>&1
 ```
-
-### 12. (Optional) Firewall
-
-```bash
-firewall-cmd --permanent --add-port=8000/tcp
-firewall-cmd --reload
-```
-
-Or if placing behind nginx for TLS, open 443 instead and see the reverse proxy section in [DEPLOY.md](DEPLOY.md).
 
 ## Upgrading
 

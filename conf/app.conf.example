@@ -6,11 +6,11 @@ allowed_hosts = localhost,127.0.0.1
 [zimbra]
 admin_url = https://zimbra.example.com:7071/service/admin/soap
 admin_user = admin@example.com
-admin_password = CHANGE_ME
+admin_password =
 
 [database]
-host = localhost
+host = db
 port = 3306
 name = zimbra_lifecycle
 user = zlm
-password = CHANGE_ME
+password =
