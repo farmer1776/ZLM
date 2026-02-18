@@ -177,8 +177,10 @@ podman-compose exec app python -m cli.main sync
 ### 10. Create an admin user
 
 ```bash
-sudo bash deploy/create_user.sh admin 'YourPassword123!'
+bash deploy/create_user.sh admin 'YourPassword123!'
 ```
+
+> **Rootless Podman:** Do not use `sudo` — the containers run under your user, not root.
 
 ### 11. (Optional) Set up cron jobs
 
