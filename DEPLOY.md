@@ -97,8 +97,12 @@ podman-compose exec app python -m cli.main sync
 ## 6. Create Admin User
 
 ```bash
-podman-compose exec -it app python -m cli.main user create
+bash deploy/create_user.sh admin 'YourSecurePassword'
 ```
+
+> Always use single quotes around the password to prevent the shell from interpreting
+> special characters such as `!`. The script passes credentials via environment
+> variables so they are never visible in process listings or shell history.
 
 ## Maintenance
 
@@ -201,3 +205,19 @@ server {
 | "Encryption key not found" | Verify `zlm_encryption_key` secret: `podman secret ls` |
 | DB connection refused | Ensure `db` service started first and is healthy |
 | Permission denied on volumes | Verify `:Z` SELinux labels are in compose file |
+| Login fails after `create-user` | Shell may have mangled the password (e.g. `!` triggers history expansion). Reset it — see below. |
+
+### Reset a User Password
+
+Generate a fresh bcrypt hash inside the container and write it directly to the database:
+
+```bash
+# 1. Generate hash (replace 'NewPassword' with your chosen password)
+NEW_HASH=$(podman exec zlm-app python3 -c \
+  "from passlib.hash import bcrypt; print(bcrypt.hash('NewPassword'))")
+
+# 2. Write it to the DB
+podman exec zlm-db mariadb -u zlm -p"$(cat /run/secrets/zlm_db_password)" \
+  zimbra_lifecycle \
+  -e "UPDATE users SET password_hash='$NEW_HASH' WHERE username='admin';"
+```
