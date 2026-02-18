@@ -51,13 +51,31 @@ A web-based management tool for Zimbra mailbox lifecycle operations — account 
 
 These steps assume a fresh Rocky Linux 9.7 server with Podman 6.5 already installed.
 
-### 1. Install podman-compose and git
+### 1. Install podman-compose and runc
 
 ```bash
-dnf install -y podman-compose git
+dnf install -y podman-compose runc git
 ```
 
-### 2. Clone the repository
+### 2. Proxmox / Incus VMs — cgroup workaround
+
+> **Skip this step on bare-metal hosts.** Proxmox VMs (and Incus containers) restrict
+> cgroup controller delegation, which prevents the default `crun` runtime from starting
+> containers. Apply this config to use `runc` with the cgroupfs manager instead:
+
+```bash
+mkdir -p /etc/containers
+cat > /etc/containers/containers.conf << 'EOF'
+[containers]
+default_sysctls = []
+
+[engine]
+runtime = "runc"
+cgroup_manager = "cgroupfs"
+EOF
+```
+
+### 3. Clone the repository
 
 ```bash
 cd /opt
@@ -65,7 +83,7 @@ git clone https://github.com/farmer1776/ZLM.git
 cd ZLM
 ```
 
-### 3. Create podman secrets
+### 4. Create podman secrets
 
 All sensitive credentials are stored as podman secrets — never in files or environment variables.
 
@@ -93,7 +111,7 @@ Verify all four secrets exist:
 podman secret ls
 ```
 
-### 4. Configure the application
+### 5. Configure the application
 
 ```bash
 # Environment variables (non-secret settings)
@@ -108,20 +126,20 @@ cp conf/app.conf.example conf/app.conf
 #   - Leave passwords blank (read from secrets)
 ```
 
-### 5. Create data directories
+### 6. Create data directories
 
 ```bash
 mkdir -p data/{uploads,exports,logs}
 chown -R 999:999 data/
 ```
 
-### 6. Build the container image
+### 7. Build the container image
 
 ```bash
 podman-compose build
 ```
 
-### 7. Start services
+### 8. Start services
 
 ```bash
 podman-compose up -d
@@ -142,19 +160,19 @@ curl http://localhost:8000/healthz
 # {"status":"ok"}
 ```
 
-### 8. Sync accounts from Zimbra
+### 9. Sync accounts from Zimbra
 
 ```bash
 podman-compose exec app python -m cli.main sync
 ```
 
-### 9. Create an admin user
+### 10. Create an admin user
 
 ```bash
 sudo bash deploy/create_user.sh admin 'YourPassword123!'
 ```
 
-### 10. (Optional) Set up cron jobs
+### 11. (Optional) Set up cron jobs
 
 ```bash
 crontab -e
@@ -168,7 +186,7 @@ crontab -e
 0 2 * * * podman-compose -f /opt/ZLM/podman-compose.yml exec -T app python -m cli.main purge >> /var/log/zlm-purge.log 2>&1
 ```
 
-### 11. (Optional) Firewall
+### 12. (Optional) Firewall
 
 ```bash
 firewall-cmd --permanent --add-port=8000/tcp
