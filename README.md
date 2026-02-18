@@ -14,7 +14,7 @@ A web-based management tool for Zimbra mailbox lifecycle operations — account 
 | **Migrations** | Alembic |
 | **Templates** | Jinja2 |
 | **Auth** | Session-based (bcrypt + Fernet-encrypted config) |
-| **Container Runtime** | Podman 6.5 + podman-compose |
+| **Container Runtime** | Podman 5.x + podman-compose |
 | **Host OS** | Rocky Linux 9.7 |
 
 ## Project Structure
@@ -49,7 +49,7 @@ A web-based management tool for Zimbra mailbox lifecycle operations — account 
 
 ## Provisioning on Rocky Linux 9.7
 
-These steps assume a fresh Rocky Linux 9.7 server with Podman 6.5 already installed. All commands run as a **non-root user** (rootless Podman).
+These steps assume a fresh Rocky Linux 9.7 server with Podman 5.x already installed. All commands run as a **non-root user** (rootless Podman).
 
 ### 1. Enable linger
 
