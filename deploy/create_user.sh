@@ -16,8 +16,9 @@ cat > /tmp/zlm_create_user.py << 'EOF'
 import sys, os
 sys.path.insert(0, "/app")
 
-username = sys.argv[1]
-password = sys.argv[2]
+# Read credentials from env vars to avoid shell argument/history-expansion issues
+username = os.environ["ZLM_NEW_USER"]
+password = os.environ["ZLM_NEW_PASS"]
 
 if len(password) < 8:
     print("Error: Password must be at least 8 characters.", file=sys.stderr)
@@ -42,5 +43,5 @@ finally:
 EOF
 
 podman cp /tmp/zlm_create_user.py zlm-app:/tmp/zlm_create_user.py
-podman exec zlm-app python /tmp/zlm_create_user.py "$USERNAME" "$PASSWORD"
+podman exec -e ZLM_NEW_USER="$USERNAME" -e ZLM_NEW_PASS="$PASSWORD" zlm-app python /tmp/zlm_create_user.py
 rm -f /tmp/zlm_create_user.py
