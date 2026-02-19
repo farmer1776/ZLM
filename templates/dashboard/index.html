@@ -190,17 +190,22 @@
         return rows;
     }
 
+    var INTERVAL_IDLE    = 10000;  // 10s when no sync is running
+    var INTERVAL_RUNNING =  2000;  // 2s while a sync is in progress
+
     function poll() {
         fetch('/settings/api/last-sync/')
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 body.innerHTML = renderBody(d);
-                if (d.status === 'running') {
-                    spinner.style.setProperty('display', 'inline-block', 'important');
-                    if (!timer) timer = setInterval(poll, 3000);
-                } else {
-                    spinner.style.setProperty('display', 'none', 'important');
-                    if (timer) { clearInterval(timer); timer = null; }
+                var want = d.status === 'running' ? INTERVAL_RUNNING : INTERVAL_IDLE;
+                spinner.style.setProperty('display',
+                    d.status === 'running' ? 'inline-block' : 'none', 'important');
+                // Reschedule only if the interval needs to change
+                if (!timer || timer._interval !== want) {
+                    if (timer) clearInterval(timer);
+                    timer = setInterval(poll, want);
+                    timer._interval = want;
                 }
             })
             .catch(function () {
@@ -208,10 +213,9 @@
             });
     }
 
-    // Start polling immediately if a sync is already running on page load.
-    {% if stats.last_sync and stats.last_sync.status == 'running' %}
-    timer = setInterval(poll, 3000);
-    {% endif %}
+    // Always poll — picks up syncs started from the Settings page or scheduler.
+    timer = setInterval(poll, INTERVAL_IDLE);
+    timer._interval = INTERVAL_IDLE;
 })();
 </script>
 {% endblock %}
