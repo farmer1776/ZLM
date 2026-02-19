@@ -1,5 +1,7 @@
 # Zimbra Lifecycle Manager (ZLM)
 
+![Dashboard](ZLM-dashboard.png)
+
 A web-based management tool for Zimbra mailbox lifecycle operations — account syncing, status changes, bulk operations, audit logging, and scheduled purging.
 
 ## Application Stack
@@ -280,3 +282,4 @@ podman-compose logs -f        # both
 See [DEPLOY.md](DEPLOY.md) for backup/restore procedures, troubleshooting, and reverse proxy configuration.
 
 For bare-metal or Incus system container installs (no Podman), see [DEPLOY-BAREMETAL.md](DEPLOY-BAREMETAL.md).
+
